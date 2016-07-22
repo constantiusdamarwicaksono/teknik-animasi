@@ -1,0 +1,202 @@
+<html>
+<head>
+    <meta charset="utf-8"> 
+    <title>Awas Ketiban !</title>
+    <style type="text/css">
+    body{
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+<canvas id = "canvas" width = "900" height = "600" style="border :#123578 2px solid"></canvas>
+<script src = "Ball.js"></script>
+<script src = "utils.js"></script>
+<script>
+	window.onload=function(){
+
+		 var canvas = document.getElementById('canvas'),
+   		 context = canvas.getContext('2d');
+   		 var bola;
+         var arrayBola=[],arrayBola1=[];
+         var jumlahBola=50;
+         var now,then,angle=0;
+         var playZoom=0,vsComZoom=0;
+         var papan ={
+         	x:180,
+         	y:50
+         };
+         var isInPLay=false,isInPLay2=false;
+         var click=new Audio("click.mp3"); 
+
+         var opening  = new Audio("opening.mp3");
+         opening.play();
+
+         var gambar=new Image();
+         gambar.src="img/main_menu.png";
+         var tulisan = new Image();
+         tulisan.src="img/tulisan.png";
+         for(var i=0;i<jumlahBola;i++){
+             bola= new Ball(Math.random()*6+6,utils.randomColor());
+             bola.setLocation(Math.random()*canvas.width+1,Math.random()*canvas.height+1);
+             bola.speed=Math.random()*1+0.2;
+             bola.createTarget(canvas);
+             bola.vx=Math.random()*6-3;
+             bola.vy=Math.random()*6-3;
+             bola.globalAlpha=(bola.radius/12)*1;
+             arrayBola.push(bola);
+
+         }
+         for (var i = 0; i <jumlahBola; i++) {
+            bola = new Ball(Math.ceil(Math.random()*10),"#123578");
+            bola.setLocation(Math.random()*canvas.width+1,Math.random()*canvas.height+1);
+            bola.vx=bola.radius/10;
+            bola.globalAlpha=(bola.radius/50)*1;
+            arrayBola1.push(bola);
+         };
+
+   		 window.addEventListener("mousedown", mousedn, true);
+   		 window.addEventListener("mousemove", mousemove, true);
+   		 function mousedn(e) {
+	   		 var rect = canvas.getBoundingClientRect();
+	   		 msx = e.pageX - rect.left;
+	   		 msy = e.pageY - rect.top;
+	   		 if(msx>335&&msx<335+219&&msy>380&&msy<380+63){
+	   		 	window.location.href="p1vsp2.html";
+	   		 }
+         if(msx>300&&msx<300+293&&msy>470&&msy<470+63){
+          window.location.href="p1vsCom.html";
+         }
+
+   		 };
+   		 function mousemove(e){
+   		 	 var rect = canvas.getBoundingClientRect();
+	   		 msx = e.pageX - rect.left;
+	   		 msy = e.pageY - rect.top;
+	   		 if(msx>335&&msx<335+219&&msy>380&&msy<380+63){
+          playZoom=0.2;
+	   		 }else{
+	   		 	playZoom=0;
+	   		 }
+
+         if(msx>300&&msx<300+293&&msy>470&&msy<470+63){
+          vsComZoom=0.2;
+         }else{
+          vsComZoom=0;
+         }
+         if(msx>335&&msx<335+219&&msy>380&&msy<380+63||msx>300&&msx<300+293&&msy>470&&msy<470+63){
+            canvas.style.cursor="pointer";
+              if(isInPLay===false){
+                click.play();
+                isInPLay=true;
+              }
+         }else{
+            canvas.style.cursor="default";
+            isInPLay=false;
+         }
+   		 }
+
+
+   		 function moveBall(){
+   		 	
+   		 	now=new Date().getTime();
+   		 	var delta = now-then;
+   		 	for (var i = 0; i < arrayBola.length; i++) {
+   		 	    dy=arrayBola[i].targetY-arrayBola[i].y;
+   		 	    dx=arrayBola[i].targetX-arrayBola[i].x;
+   		 	    angle=Math.atan2(dy,dx);
+   		 	    arrayBola[i].vy=Math.sin(angle)*bola.speed;
+   		 	    arrayBola[i].vx=Math.cos(angle)*bola.speed;
+   		 	    if(arrayBola[i].targetDistance()<2){
+   		 	        arrayBola[i].createTarget(canvas);
+   		 	    }
+   		 	    arrayBola[i].moveToTarget(delta);
+   		 	};
+   		 	then=now;
+   		 };
+
+       function spring(partA, partB) {
+                springAmount=0.005;
+                var dx = partB.x - partA.x,
+                    dy = partB.y - partA.y,
+                    dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 4*partA.radius) {
+                    context.strokeStyle = partA.color;
+                    /*context.beginPath();
+                    context.moveTo(partA.x, partA.y);
+
+                    context.lineTo(partB.x, partB.y);
+                    context.stroke();*/
+                    partA.lineToBall(context,partB);
+                    var ax = dx * springAmount,
+                        ay = dy * springAmount;
+                    partA.vx += ax;
+                    partA.vy += ay;
+                    partB.vx -= ax;
+                    partB.vy -= ay;
+                }
+            }
+
+
+            function move(partA, i) {
+                partA.x += partA.vx;
+                partA.y += partA.vy;
+                if (partA.x > canvas.width) {
+                    partA.x = 0;
+                } else if (partA.x < 0) {
+                    partA.x = canvas.width;
+                }
+                if (partA.y > canvas.height) {
+                    partA.y = 0;
+                } else if (partA.y < 0) {
+                    partA.y = canvas.height;
+                }
+                for (var partB, j = i + 1; j < jumlahBola; j++) {
+                    partB = arrayBola[j];
+                    spring(partA, partB);
+                }
+            }
+   		  function drawAllBall(){
+   		  	 context.save()
+   		  	 for (var i = 0; i < arrayBola.length; i++) {
+                    //context.moveTo(arrayBola[i].x,arrayBola[i].y);
+                    context.globalAlpha=arrayBola[i].globalAlpha;
+                    arrayBola[i].drawNoLine(context);
+                };
+             context.restore();
+             for(var i=0;i<arrayBola.length;i++){
+              /* context.lineTo(arrayBola[i].x,arrayBola[i].y);*/
+              for (var j = i+1; j < arrayBola.length; j++) {
+                  arrayBola[i].createLine(context,arrayBola[j]);
+              };
+          	};
+   		  }
+   		 
+        function linearMove(ball,i){
+          ball.x+=ball.vx;
+          if(ball.x>canvas.width){
+            ball.x=0; 
+            ball.y=Math.ceil(Math.random()*canvas.height);
+          }
+          ball.drawNoLine(context);
+          
+        }
+       now=new Date().getTime();
+   		 function drawFrame(){
+   		 	context.clearRect(0, 0, canvas.width, canvas.height);
+			 arrayBola1.forEach(linearMove);
+   		 	arrayBola.forEach(move);
+        drawAllBall();
+   		 	context.drawImage(gambar,2,2,550,285,papan.x,25,550,285);	
+   		 	//context.drawImage(gambar,554,2,170,80,371-(170*(playZoom/2)),425-(80*(playZoom/2)),170+(170*playZoom),80+(80*playZoom));
+        context.drawImage(tulisan,0,0,219,63,335-(219*(playZoom/2)),380-(63*(playZoom/2)),219+(219*playZoom),63+(63*playZoom));
+        context.drawImage(tulisan,0,76,297,63,300-(297*(vsComZoom/2)),470-(63*(vsComZoom/2)),297+(297*vsComZoom),63+(vsComZoom*63));
+   		 	window.requestAnimationFrame(drawFrame,canvas)
+   		 };
+   		 then = new Date().getTime();
+   		 drawFrame();
+
+	};
+</script>
+</body>
+</html>

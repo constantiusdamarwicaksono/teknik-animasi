@@ -1,0 +1,108 @@
+<html>
+<head>
+    <meta charset="utf-8"> 
+    <title>Awas Ketiban !</title>
+    <style type="text/css">
+    body{
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+<canvas id = "canvas" width = "900" height = "600" style="border : #123578 2px solid"></canvas>
+<script src = "Ball.js"></script>
+<script src = "utils.js"></script>
+<script>
+	window.onload=function(){
+		 var canvas = document.getElementById('canvas'),
+   		 context = canvas.getContext('2d');
+   		 var bola;
+         var arrayBola=[];
+         var jumlahBola=50;
+         var now,then;
+         var playZoom=0;
+
+         var gambar=new Image();
+         gambar.src="img/main_menu.png";
+
+         for(var i=0;i<jumlahBola;i++){
+             bola= new Ball(8,"#2B648F");
+             bola.setLocation(Math.random()*canvas.width+1,Math.random()*canvas.height+1);
+             bola.speed=Math.random()*1+0.2;
+             bola.createTarget(canvas);
+             console.log(bola.x,bola.y);
+             arrayBola.push(bola);
+
+         }
+
+   		 window.addEventListener("mousedown", mousedn, true);
+   		 window.addEventListener("mousemove", mousemove, true);
+   		 function mousedn(e) {
+	   		 var rect = canvas.getBoundingClientRect();
+	   		 msx = e.pageX - rect.left;
+	   		 msy = e.pageY - rect.top;
+	   		 if(msx>260&&msx<260+330&&msy>425&&msy<425+76){
+	   		 	window.location.href="start.html";
+	   		 }
+
+   		 };
+   		 function mousemove(e){
+   		 	 var rect = canvas.getBoundingClientRect();
+	   		 msx = e.pageX - rect.left;
+	   		 msy = e.pageY - rect.top;
+	   		 if(msx>260&&msx<260+330&&msy>425&&msy<425+76){
+	   		 	canvas.style.cursor="pointer";
+	   		 	playZoom=0.2;
+	   		 }else{
+	   		 	canvas.style.cursor="default";
+	   		 	playZoom=0;
+	   		 }
+   		 }
+
+
+   		 function moveBall(){
+   		 	now=new Date().getTime();
+   		 	var delta = now-then;
+   		 	for (var i = 0; i < arrayBola.length; i++) {
+   		 	    dy=arrayBola[i].targetY-arrayBola[i].y;
+   		 	    dx=arrayBola[i].targetX-arrayBola[i].x;
+   		 	    angle=Math.atan2(dy,dx);
+   		 	    arrayBola[i].vy=Math.sin(angle)*bola.speed;
+   		 	    arrayBola[i].vx=Math.cos(angle)*bola.speed;
+   		 	    if(arrayBola[i].targetDistance()<2){
+   		 	        arrayBola[i].createTarget(canvas);
+   		 	    }
+   		 	    arrayBola[i].moveToTarget(delta);
+   		 	};
+   		 	then=now;
+   		 };
+   		  function drawAllBall(){
+   		  	 for (var i = 0; i < arrayBola.length; i++) {
+                    //context.moveTo(arrayBola[i].x,arrayBola[i].y);
+                    arrayBola[i].drawNoLine(context);
+                };
+             for(var i=0;i<arrayBola.length;i++){
+              /* context.lineTo(arrayBola[i].x,arrayBola[i].y);*/
+              for (var j = i+1; j < arrayBola.length; j++) {
+                  arrayBola[i].createLine(context,arrayBola[j]);
+              };
+          	};
+   		  }
+   		  now=new Date().getTime();
+   		 function drawFrame(){
+   		 	context.clearRect(0, 0, canvas.width, canvas.height);
+			moveBall();
+   		 	drawAllBall();
+   		 	context.drawImage(gambar,0,522,503,214,190,50,503,214);
+   		 	
+   		 	context.drawImage(gambar,0,741,330,76,260-(330*(playZoom/2)),425-(76*(playZoom/2)),330+(330*playZoom),76+(76*playZoom));
+
+   		 	window.requestAnimationFrame(drawFrame,canvas)
+   		 };
+   		 then = new Date().getTime();
+   		 drawFrame();
+
+	};
+</script>
+</body>
+</html>

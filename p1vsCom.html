@@ -1,0 +1,638 @@
+<html>
+<head>
+    <meta charset="utf-8"> 
+    <title>Awas Ketiban !</title>
+    <style type="text/css">
+    body{
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+<canvas id = "canvas" width = "900" height = "600" style="border :#123578 2px solid"></canvas>
+<script src = "Ball.js"></script>
+<script src = "utils.js"></script>
+<script>
+
+window.onload = function(){
+    var canvas = document.getElementById('canvas'),
+    context = canvas.getContext('2d');
+
+    var comHold=0,comHoldMax=0,comHoldMaxChanged=false;   
+    var g = 9.8,gravity=0.2,bounce=-0.5;friction=-0.3;
+    var t = 0,toRad=Math.PI/180,windMeter;
+    var acc;
+    var acc2;
+    var v,v2;
+    var bottleMaxChange=Math.random()*500+10,bottleCounter=0;
+    var pressedA = false;
+    var pressedB = false;
+    var player1,player2;
+    var added=false;
+    var power1z=0,power2z=0;
+    var mouse = utils.captureMouse(canvas);
+    var healthX,healthY;
+    var turn = 1,firstAction=false,turnChanged=false,sayA,sayB;
+    var windCounter=0,windMaxChange=Math.random()*3150+450;
+    var audioSound = new Audio("backsound.mp3");
+    audioSound.loop=true;
+    audioSound.addEventListener("ended",function(){
+        this.currentTime=0;
+        this.play();
+    },false);
+    audioSound.play();
+    var hitSound = new Audio("hit.wav");
+    var laugh = new Audio("laugh.wav");
+var cont=0;
+    var bird={
+        x:0,
+        y:100,
+        counter:0,
+        xCrop:59,
+        yCrop:0,
+        width:58,
+        height:51,
+        direction:1
+    };
+    var bottle={
+        x:0,
+        y:0,
+        xCrop:0,
+        yCrop:112,
+        width:22,
+        height:43,
+        vy:0,vx:0,mass:2,
+        drawBool:false
+    }
+    var background = new Image();
+    background.src = "img/background.png";
+    var gambar = new Image();
+    gambar.src= "img/gambar.png";
+    var powerButton = new Image();
+    powerButton.src="img/power_button.png";
+    var health = new Image();
+    health.src="img/health.png";
+    var decal = new Image();
+    decal.src ="img/tambahan.png";
+    var birdImg = new Image();
+    birdImg.src="img/bird.png";
+    var text= new Image();
+    text.src="img/tulisan.png";
+    var environment={
+        left:0,
+        top:0,
+        right:canvas.width,
+        bottom:canvas.height-70,
+        wind:Math.random()*2-1
+    };
+    function awan(x,y){
+        this.x=x;
+        this.y=y;
+    };
+    var awanArray=[];
+    for(var i=0;i<3;i++){
+        awanArray[i] = new awan(Math.abs(Math.random()*canvas.width+1),Math.abs(Math.random()*110+100));
+    };
+    function player(x,y,width,height,pwBtnX,pwBtnY){
+        if(x==undefined){x=0;};
+        if(y==undefined){y=0;};
+        this.x=x;
+        this.y=y;
+        this.score=5;
+        this.width=width;
+        this.height=height;
+        this.added=false;
+        this.powerX;
+        this.powerY;
+        this.powerButtonX=pwBtnX;
+        this.powerButtonY=pwBtnY;
+        this.powerButtonRadius=30;
+    }
+    
+    player1=new player(0,380,153,157,17,550);
+    player2=new player(770,420,112,115,840,550);
+    player1.powerX=50;
+    player1.powerY=550;
+    player1.boundX=45;
+    player1.boundY=player1.y+20;
+    player1.boundW=93;
+    player1.boundH=130;
+    player2.powerX=833;
+    player2.powerY=550;
+    player2.boundX=785;
+    player2.boundY=player2.y+20;
+    player2.boundW=72;
+    player2.boundH=player2.height-27;
+    bolaA = new Ball(30,"#00ffff");
+    bolaA.defaultX=60;
+    bolaA.defaultY=385;
+    bolaB = new Ball(30,"#ff00ff");
+    bolaB.defaultX=850;
+    bolaB.defaultY=420;
+    bolaA.drawBool=false;
+    bolaB.drawBool=false;
+
+    
+    window.addEventListener("mousedown", mousedn, true);
+    window.addEventListener("mouseup", mouseup, true);
+    window.addEventListener("keydown",function(event){
+        if(event.keyCode==90){
+            bottle.x=bird.x+bird.width/2;
+            bottle.y=bird.y+bird.height/2;
+            bottle.drawBool=true;
+        }
+    },true);
+
+    function mousedn(e) {
+    var rect = canvas.getBoundingClientRect();
+    msx = e.pageX - rect.left;
+    msy = e.pageY - rect.top;
+
+        if (msx > player1.powerButtonX  && msx < player1.powerButtonX + player1.powerButtonRadius) {
+            if (msy > player1.powerButtonY  && msy < player1.powerButtonY + player1.powerButtonRadius) {
+                if(turn!=2){
+                    pressedA = true;
+                    turnChanged=false;
+                    firstAction=true;
+                    power1z=-0.2;
+                }else{
+                  //  sayA=true;
+                }
+                
+            }
+        }
+    }
+
+    function mouseup(e) {
+        pressedA = false;
+        sayA=false;
+        power1z=0;
+        turnChange();
+    }
+    
+    function hitTest(penembak,sasaran,peluru){
+        if(peluru.x+peluru.radius>sasaran.boundX&&peluru.x- peluru.radius<sasaran.boundX+sasaran.boundW&&peluru.y+peluru.radius>sasaran.boundY&&peluru.y- peluru.radius<sasaran.boundY+sasaran.boundH&&peluru.bounced==false){
+            //collision detected
+            if(!penembak.added){
+                sasaran.score--;
+                hitSound.play();
+                penembak.added=true;    
+            };
+            peluru.drawBool=false;
+            laugh.play();
+        };
+    };
+    var z=0;
+    function resetBall(ball){
+        if(ball.x+ball.radius<environment.left||ball.x+ball.radius>environment.right||ball.y- ball.radius<environment.top||ball.y+ball.radius>environment.bottom){
+            ball.y=environment.bottom-ball.radius;
+            ball.bounced=true;
+            ball.vy*=bounce;
+            ball.vx=0.001;
+            if(ball.vy>-1){
+                ball.vx=0;
+                ball.vy=0;
+                ball.rotation=0;
+                ball.x=ball.defaultX;
+                ball.y=ball.defaultY;
+                ball.drawBool=false;
+            }
+        }else{
+            if(firstAction){
+                ball.rotation+=0.079;
+            }
+        }
+        momentum(ball);
+    };
+    function rotate (x, y, sin, cos, reverse) {
+      return {
+        x: (reverse) ? (x * cos + y * sin) : (x * cos - y * sin),
+        y: (reverse) ? (y * cos - x * sin) : (y * cos + x * sin)
+      };
+    }
+    function momentum(ball){
+        var dx = ball.x - bottle.x,
+            dy = ball.y - bottle.y,
+            dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < ball.radius) {
+          var angle = Math.atan2(dy, dx),
+              sin = Math.sin(angle),
+              cos = Math.cos(angle),
+              pos0 = {x: 0, y: 0}, 
+              pos1 = rotate(dx, dy, sin, cos, true),
+              vel0 = rotate(bottle.vx, bottle.vy, sin, cos, true),
+              vel1 = rotate(ball.vx, ball.vy, sin, cos, true),
+              vxTotal = vel0.x - vel1.x;
+          vel0.x = ((bottle.mass - ball.mass) * vel0.x + 2 * ball.mass * vel1.x) /
+                   (bottle.mass + ball.mass);
+          vel1.x = vxTotal + vel0.x;
+          pos0.x += vel0.x;
+          pos1.x += vel1.x;
+          var pos0F = rotate(pos0.x, pos0.y, sin, cos, false),
+              pos1F = rotate(pos1.x, pos1.y, sin, cos, false);
+          ball.x = bottle.x + pos1F.x;
+          ball.y = bottle.y + pos1F.y;
+          bottle.x = bottle.x + pos0F.x;
+          bottle.y = bottle.y + pos0F.y;
+          var vel0F = rotate(vel0.x, vel0.y, sin, cos, false),
+              vel1F = rotate(vel1.x, vel1.y, sin, cos, false);
+          bottle.vx = vel0F.x;
+          bottle.vy = vel0F.y;
+          ball.vx = vel1F.x;
+          ball.vy = vel1F.y;
+        }
+    }
+    function turnChange(){
+        if(turnChanged==false&&firstAction==true){
+            turnChanged=true;
+            if(turn==1){
+                turn=2;
+            }else{
+                turn=1;
+            }
+        }
+            
+    }
+    
+    function cekStatus(){
+        if(player1.score<1){
+            window.location.href="player2win.html";
+        }else if(player2.score<1){
+            window.location.href="computerwin.html";
+        }
+    };
+    function updateWindMeter(){
+        if(environment.wind<0.05&&environment.wind>-0.05){
+            windMeter=90*toRad;
+        }else{
+            if(environment.wind<-0.9){
+               
+                windMeter=178*toRad;
+            }else if(environment.wind<-0.8){
+                windMeter=169*toRad;
+            }else if(environment.wind<-0.7){
+                windMeter=159*toRad;
+            }else if(environment.wind<-0.6){
+                windMeter=149*toRad;
+            }else if(environment.wind<-0.5){
+                windMeter=139*toRad;
+            }else if(environment.wind<-0.4){
+                windMeter=129*toRad;
+            }else if(environment.wind<-0.3){
+                windMeter=119*toRad;
+            }else if(environment.wind<-0.2){
+                windMeter=109*toRad;
+            }else if(environment.wind<-0.05){
+                windMeter=95*toRad;
+            }
+
+            if(environment.wind>0.9){
+                windMeter=1*toRad;
+            }else if(environment.wind>0.8){
+                windMeter=10*toRad;
+            }else if(environment.wind>0.7){
+                windMeter=20*toRad;
+            }else if(environment.wind>0.6){
+                windMeter=30*toRad;
+            }else if(environment.wind>0.5){
+                windMeter=40*toRad;
+            }else if(environment.wind>0.4){
+                windMeter=50*toRad;
+            }else if(environment.wind>0.3){
+                windMeter=70*toRad;
+            }else if(environment.wind>0.2){
+                windMeter=80*toRad;
+            }else if(environment.wind>0.05){
+                windMeter=86*toRad;
+            }
+
+        }
+
+    }
+    function moveBird(){
+        if(bird.direction==1){
+            bird.xCrop=59;
+            if(bird.x<canvas.width+10){
+                bird.x++;
+            }else{
+                bird.direction=-1;
+                bird.y=Math.ceil(Math.random()*313);
+            }
+            
+        }else if(bird.direction==-1){
+            bird.xCrop=0;
+            if(bird.x>-bird.width+10){
+                bird.x--;
+            }else{
+                bird.direction=1;
+                bird.y=Math.ceil(Math.random()*313);
+            }
+        }
+        if(bird.counter<13){
+            bird.counter++;
+        }else{
+            bird.counter=0;
+            if(bird.yCrop==0){
+                bird.yCrop=52;
+                bird.width=54;
+                bird.height=57;
+            }else{
+                bird.yCrop=0;
+                bird.width=58;
+                bird.height=51;
+            }
+        }
+        context.save();
+        context.globalAlpha=0.8;
+        context.drawImage(birdImg,bird.xCrop,bird.yCrop,bird.width,bird.height,bird.x,bird.y,bird.width,bird.height)
+        context.restore();
+    }
+    function bottleProcessing(){
+        if(bottleCounter<bottleMaxChange){
+            bottleCounter++;
+        }else{
+            bottle.x=bird.x+bird.width/2;
+            bottle.y=bird.y+bird.height/2;
+            bottle.drawBool=true;
+            bottleCounter=0;
+            bottleMaxChange=Math.random()*500+10;
+        }
+        if(bottle.drawBool===true){
+            bottle.y+=bottle.vy;
+            bottle.x+=bottle.vx;
+            if(bottle.y+bottle.height<canvas.height-70){
+                bottle.vy+=gravity;
+                context.drawImage(birdImg,bottle.xCrop,bottle.yCrop,bottle.width,bottle.height,bottle.x,bottle.y,bottle.width,bottle.height);
+            }else{
+                bottle.vy=0;
+                bottle.vx=0;
+            }
+        }
+    }
+    function comTurn(){
+        if(comHold<comHoldMax){
+            comHold++;
+            pressedB=true;
+        }else{
+            pressedB=false;
+            if(environment.wind>0){
+                   if(acc2<50){
+                        acc2+=50;
+                   }
+               }
+               else if(environment.wind<0){
+                   if(acc2>140){
+                        acc2-=20;
+                   }
+            }
+            power2z=0;
+            sayB=false;
+            turnChanged=false;
+            turnChange();
+
+        }
+         
+    }
+    (function drawFrame(){
+        window.requestAnimationFrame(drawFrame,canvas);
+        context.clearRect(0,0,canvas.width,canvas.height);
+        context.drawImage(decal,609,110,194,216,700,environment.bottom-216,194,216);
+        context.save();context.globalAlpha=0.6;
+        context.drawImage(decal,216,110,194,216,400,environment.bottom-216+(0.3*216),194-(0.3*194),216-(0.3*216));context.restore();
+        context.drawImage(decal,414,159,101,176,0,environment.bottom-176,101,176);
+        context.save();context.globalAlpha=0.8;
+        context.drawImage(decal,0,0,216,325,100,environment.bottom-325+(0.1*325),216-(0.1*216),325-(0.1*325));context.restore();
+        context.drawImage(background,0,environment.bottom-45);
+        if (pressedA == true) {
+            bolaA.bounced=false;
+            bolaA.rest=false;
+            player1.added=false;
+            //v = vo * Math.abs(Math.sin((acc / 90) * Math.PI));  
+            v=acc;
+            //t = 0;
+            bolaA.x=bolaA.defaultX;
+            bolaA.y=bolaA.defaultY;
+            bolaA.drawBool=true;
+           /* bolaA.vx = v * Math.cos(angle);
+            bolaA.vy = v * Math.sin(angle);*/
+            if(acc<=150){
+                acc+=2;}
+            else{
+                acc=0;}
+            bolaA.vx=acc/15;
+            bolaA.vy=-8;
+            context.save();
+            context.fillStyle="#4F7C9E";
+            context.fillRect(player1.powerX,player1.powerY,v,30);
+            context.restore();
+            //bolaA.vx=bolaA.vx+(3*environment.wind);
+        }
+
+      
+
+        if (pressedB == true) {
+            bolaB.bounced=false;
+            bolaB.rest=false;
+            player2.added=false;
+            /*var randomThrower=(Math.floor(Math.random()*100)+1);
+            var depan=Math.floor(randomThrower/10);
+            var belakang=randomThrower%10;
+
+            var vt= Math.abs(environment.wind)*75*1;*/
+           
+            //v2 = vo * Math.abs(Math.sin((acc2 / 180) * Math.PI));  
+            v2=acc2;
+            t2 = 0;
+            bolaB.x = bolaB.defaultX;
+            bolaB.y = bolaB.defaultY;
+            
+            /*if(environment.wind>0){
+                if(acc2>=150-randomThrower*2||cont>3){
+                    pressedB = false;
+                    sayB=false;
+                    power2z=0;turnChanged=false;
+                    turnChange();
+                }
+            }
+            else if(environment.wind<0){
+                if(acc2>=150-vt+(randomThrower*4)||cont>3){
+                    console.log("randomThrower",vt,depan,belakang,randomThrower);
+                    pressedB = false;
+                    sayB=false;
+                    power2z=0;
+                    turnChanged=false;
+                    turnChange();
+                }
+            }*/
+            bolaB.drawBool=true;
+           /* bolaB.vx = v2 * Math.cos(angle);
+            bolaB.vy = v2 * Math.sin(angle);*/
+            if(acc2<=150){
+                //console.log(acc2);
+                acc2+=2;}
+            else{
+                //cont++;
+                acc2=0;}
+            bolaB.vx=-acc2/15;
+            bolaB.vy=-8;
+            context.save();
+            context.fillStyle="#4F7C9E";
+            context.fillRect(player2.powerX-v2,player1.powerY,v2,30);
+            context.restore();
+            //bolaB.vx=bolaB.vx+(3*environment.wind);
+        }
+
+        if (pressedA == false) {
+            acc=0;
+           /* bolaA.x = (bolaA.vx * t)+bolaA.defaultX;
+            bolaA.y = (bolaA.vy * t - (0.5 * g * t * t))*-1+bolaA.defaultY;*/
+            bolaA.x +=bolaA.vx;
+            bolaA.y += bolaA.vy;
+            if(bolaA.rest==false){
+               bolaA.vy+=gravity; 
+               bolaA.vx+=environment.wind/20;
+            }
+            hitTest(player1,player2,bolaA);
+            resetBall(bolaA,player1);
+        }
+
+        if (pressedB == false) {
+             bolaB.bounced=false;
+            acc2 = 0;cont=0;
+            /*bolaB.x = (bolaB.vx * t2 * -1)+bolaB.defaultX;
+            bolaB.y = (bolaB.vy * t2 - (0.5 * g * t2 * t2))*-1+bolaB.defaultY;*/
+            bolaB.x+=bolaB.vx;
+            bolaB.y+=bolaB.vy;
+            if(bolaB.rest==false){
+                bolaB.vy+=gravity;
+                bolaB.vx+=environment.wind/20;
+            }
+            hitTest(player2,player1,bolaB);
+            resetBall(bolaB,player2);
+        }
+
+        for (var i = 0; i < awanArray.length; i++) {
+            awanArray[i].x+=environment.wind;
+            if(environment.wind>0){
+                if(awanArray[i].x>canvas.width){
+                    awanArray[i].x=-220;
+                }
+            }
+            if(environment.wind<0){
+                if(awanArray[i].x<-220){
+                    awanArray[i].x=920;
+                }
+            }
+        };
+        context.save();
+        context.globalAlpha=0.3;
+        context.drawImage(health,6,61,78,55,awanArray[0].x,awanArray[0].y,76,53);
+        context.globalAlpha=0.5;
+        context.drawImage(health,88,4,150,81,awanArray[1].x,awanArray[1].y,150,81);
+        context.globalAlpha=0.6;
+        context.drawImage(health,6,116,219,86,awanArray[2].x,awanArray[2].y,218,86);
+        context.restore();
+        context.drawImage(powerButton,0,0,31,31,player1.powerButtonX-(31*power1z/2),player1.powerButtonY-(31*power1z/2),34+(power1z*31),34+(power1z*31));
+        context.drawImage(powerButton,0,0,31,31,player2.powerButtonX-(31*power2z/2),player2.powerButtonY-(31*power2z/2),34+(power2z*31),34+(power2z*31));
+
+        moveBird();/*
+        context.fillText(mouse.x,10,10);
+        context.fillText(mouse.y,100,10);*/
+        /*context.drawImage(gambar,12,20,153,157,player1.x,player1.y,153,157);
+        context.drawImage(gambar,34,210,112,115,player2.x,player2.y,112,115);*/
+        switch (pressedA){
+            case true : context.drawImage(gambar,12,20,153,157,player1.x,player1.y,153,157);break;
+            case false : context.drawImage(gambar,194,20,153,157,player1.x,player1.y,153,157);break;
+            default : context.drawImage(gambar,378,20,153,157,player1.x,player1.y,153,157);break;
+        }
+
+        switch (pressedB){
+            case true : context.drawImage(gambar,34,210,112,115,player2.x,player2.y,112,115);break;
+            case false : context.drawImage(gambar,210,210,112,115,player2.x,player2.y,112,115);break;
+            default : context.drawImage(gambar,390,210,112,115,player2.x,player2.y,112,115);break;
+        }
+        if(bolaA.drawBool){
+            context.save();
+            context.translate(bolaA.x,bolaA.y);
+            context.rotate(bolaA.rotation);
+            context.drawImage(gambar,771,57,62,61,0-bolaA.radius,0-bolaA.radius,58,58);
+            context.restore();
+        }
+        
+        if(bolaB.drawBool){
+            context.save();
+            context.translate(bolaB.x,bolaB.y);
+            context.rotate(bolaB.rotation);
+            context.drawImage(gambar,771,57,62,61,0-bolaB.radius,0-bolaB.radius,58,58);
+            context.restore();
+        }
+        //
+        if(sayA){
+            context.drawImage(text,0,282,98,69,84,330,98,69);
+        }
+        if(sayB){
+            context.drawImage(text,0,282,98,69,740,365,98,69);
+        }
+        //
+        healthX=20;healthY=10;
+        for(var i=0;i<player1.score;i++){
+            context.drawImage(health,6,4,29,40,healthX,healthY,29,40);
+            healthX+=35;
+        }
+        healthX=840;
+        for(var i=0;i<player2.score;i++){
+            context.drawImage(health,44,4,38,36,healthX,healthY,38,36);
+            healthX-=40;
+        }
+
+        switch(turn){
+            case 1:
+            context.drawImage(text,0,149,137,62,220,10,137,62);
+            comHoldMaxChanged=false;
+            comHold=0;
+            break;
+
+            case 2:
+             if(turn!=1)
+            {   
+                if(comHoldMaxChanged==false){
+                    comHoldMaxChanged=true;
+                    comHoldMax=(Math.random()*200)+100;
+                }
+                pressedB = true;
+                turnChanged=true;
+                firstAction=true;
+                power2z=-0.2;
+                comTurn();
+            }else{
+                sayB=true;
+            }
+            context.drawImage(text,0,216,137,62,525,10,137,62);
+            break;
+        }
+        console.log(comHoldMax,comHold,turn);
+        context.drawImage(text,0,427,146,109,370,0,146,106);
+        context.save();
+        context.translate(446,37);
+        context.rotate(windMeter);
+        context.drawImage(text,0,539,65,19,0,-9,65,19);
+        context.restore();
+
+       if(windCounter<windMaxChange){
+          windCounter++;
+       }else{
+          windCounter=0;
+          windMaxChange=Math.random()*3150+450;
+          environment.wind=Math.ceil((Math.random()*20-10))/10;
+       }
+       updateWindMeter();
+       bottleProcessing();
+
+       cekStatus();
+    }());
+};
+
+
+</script>
+</body>
+</html>

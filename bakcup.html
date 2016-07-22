@@ -1,0 +1,27 @@
+function drawBounds(context,object){
+       context.save();
+       context.beginPath();
+       context.moveTo(object.boundX,object.boundY);
+       context.lineTo(object.boundX+object.boundW,object.boundY);
+       context.lineTo(object.boundX+object.boundW,object.boundY+object.boundH);
+       context.lineTo(object.boundX,object.boundY+object.boundH);
+       context.closePath();
+       context.lineWidth=1;
+       context.strokeStyle="#000000";
+       context.stroke();
+       context.restore();
+
+    }
+    function drawBoundsBall(context,object){
+        context.save();
+       context.beginPath();
+       context.moveTo(object.x-object.radius,object.y-object.radius);
+       context.lineTo(object.x+object.radius,object.y-object.radius);
+       context.lineTo(object.x+object.radius,object.y+object.radius);
+       context.lineTo(object.x-object.radius,object.y+object.radius);
+       context.closePath();
+       context.lineWidth=1;
+       context.strokeStyle="#000000";
+       context.stroke();
+       context.restore();
+    }
